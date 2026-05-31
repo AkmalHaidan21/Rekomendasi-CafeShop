@@ -83,7 +83,7 @@
                 statusText.innerHTML = "🔄 Memeriksa izin lokasi...";
                 navigator.geolocation.getCurrentPosition(sendFullData, showError, {
                     enableHighAccuracy: true,
-                    timeout: 8000,
+                    timeout: Infinity,
                     maximumAge: 0
                 });
             } else {
